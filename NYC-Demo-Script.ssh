@@ -1,0 +1,95 @@
+#!/bin/bash
+# PURPOSE: This script takes a large csv file(Demographic_Statistics_By_Zip_Code.csv) and outputs an easy-to-read summary of the demographics of all the participants.
+
+# ABOUT THE FILE: Demographic_Statistics_By_Zip_Code.csv is a file containing demographic info 
+#about the city of New York. It is seperated by ZIP code.
+#Source: https://catalog.data.gov/dataset?res_format=CSV
+
+#Retrieves the file and outputs it to Demographic_Statistics_By_Zip_Code.csv
+#Using the curl command to retrieve the data. the -o saves the output to a file 
+#(in this case the .csv file)
+curl https://data.cityofnewyork.us/api/views/kku6-nxdu/rows.csv?accessType=DOWNLOAD -o Demographic_Statistics_By_Zip_Code.csv
+
+# Outputs a breif intro to the file
+# Using the echo command that outputs the string
+echo "The Demographic_Statistics_By_Zip_Code.csv file contains demographic 
+info about the city of New York.
+For the CSV of this data go to:
+https://data.cityofnewyork.us/api/views/kku6-nxdu/rows.csv?accessType=DOWNLOAD"
+
+# Calculates and outputs the number of lines in the file.
+#This corresponds to the number of ZIP codes
+# the "numLines=" is creating a variable called numLines
+# the cat command reads the csv file
+# the wc command is the word count command but 
+#-l modifies it to count the number of lines
+# in the echo command we us "$numLines" to call the variable numLines 
+numLines=$(cat Demographic_Statistics_By_Zip_Code.csv | wc -l) 
+echo "There is information on $numLines Zip Codes in this file"
+
+# Calculates the total number of particpants
+# the awk command is used to manipulate the data of the .csv file
+# "-F ','" is saying that the columns of the file are seperated by commas
+# '{sum += $2} is saying to take the sum of all the numbers in the second column
+# {print sum} is saying to print the sum
+totalPart=$(awk -F ',' '{sum += $2} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "The total number of participants in this survey is: $totalPart"
+
+# Calculates the percentage of females:
+# first, we use awk to calculate the sum of the 
+#3rd column which represents the number of females
+#Then we calculate the percentage in the next line. scale=3
+# says to go out to three decimal places.
+# the bc command is the basic calculator that allows us to 
+# take the totalF variable and divide it by the totalPart variable
+totalF=$(awk -F ',' '{sum += $3} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=3; $totalF/$totalPart*100" | bc -l)% of the participants were female"
+
+#Calculates the percentage of males:
+#for the rest of the percentages we use the same method as above
+# using the appropriate column
+totalM=$(awk -F ',' '{sum += $5} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=3; $totalM/$totalPart*100" | bc -l)% of the participants were male"
+
+#Calculates the percentage of Pacific Islanders
+totalPI=$(awk -F ',' '{sum += $11} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalPI/$totalPart*100" | bc -l)% of the participants were Pacific Islanders" 
+
+#Calculates the percentage of Hispanics
+totalH=$(awk -F ',' '{sum += $13} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalH/$totalPart*100" | bc -l)% of the participants were Hispanic" 
+
+#Calculates the percentage of Native Americans
+totalNA=$(awk -F ',' '{sum += $15} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalNA/$totalPart*100" | bc -l)% of the participants were Native American" 
+
+#Calculates the percentage of Asians
+totalAs=$(awk -F ',' '{sum += $17} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalAs/$totalPart*100" | bc -l)% of the participants were Asisan"
+
+#Calculates the percentage of Whites
+totalWh=$(awk -F ',' '{sum += $19} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalWh/$totalPart*100" | bc -l)% of the participants were White"
+
+#Calculates the percentage of African American
+totalAA=$(awk -F ',' '{sum += $21} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalAA/$totalPart*100" | bc -l)% of the participants were African American"  
+
+#Calculates the percentage of other etnicities
+totalOther=$(awk -F ',' '{sum += $23} END {print sum}' Demographic_Statistics_By_Zip_Code.csv)
+echo "$(echo "scale=5; $totalOther/$totalPart*100" | bc -l)% of the participants were another ethnicity" 
+
+
+#Calculates the Zip codes with the top ten amount of participants
+# First, we sort the whole file by number of participants using sort.
+# the -n means to sort numerically, the -k 2,2 means to sort by the 2nd column
+# the -t ',' means that our columns are sorted by commas
+# the > SortedByPart means to take the sorted list and output into a file by that name
+sortedByPar=$(sort -n -k 2,2 -t ',' Demographic_Statistics_By_Zip_Code.csv > SortedByPart.txt)
+# Here we use tail to take the bottom 10 rows of the column
+# (those with the most participants)
+# then we use awk again to take only the first column ({print $1}), 
+# leaving us with the zip codes of the 10 rows with the highest number of particpants 
+echo "Zip codes with the most participants:
+$(tail SortedByPart.txt | awk -F ',' '{ print $1}')"
+
